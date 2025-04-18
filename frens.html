@@ -204,7 +204,6 @@
         </div>
 
         <div class="frens-card">
-
             <div class="fren-item">
                 <div class="fren-left">
                     <img src="zk logo.png" alt="Avatar">
@@ -212,7 +211,7 @@
                 </div>
                 <span class="fren-balance">149,6737</span>
             </div>
-
+        </div>
 
 
            
@@ -220,15 +219,21 @@
         <!-- link btn -->
 
         <div class="text-center mx-auto my-4 p-4" style="color: white; max-width: 350px;">
-          <!-- Hidden input holding the link -->
-          <input type="text" id="copyText" value="https://t.me/Zinkapp_bot" style="position:absolute; left:-9999px;">
+          <!-- Hidden input holding the referral link -->
+          <input type="text" id="copyText" value="" style="position: absolute; left: -9999px;" readonly>
+      
+          <!-- Button to copy the referral link -->
+          <button class="copy-btn" onclick="copyLink()">
+              Copy Referral Link <i class="bi bi-clipboard"></i>
+          </button>
+      
+          <!-- Alert when link is copied -->
+          <div id="alertBox" style="display: none; color: rgb(50, 241, 50); margin-top: 10px;">Referral link copied!</div>
+      </div>
+      
         
-          <!-- Copy Button -->
-          <button class="copy-btn" onclick="copyLink()">Copy Link <i class="bi bi-clipboard"></i></button>
-        
-          <!-- Alert Message -->
-          <div id="alertBox" style="display: none; color: lime; margin-top: 10px;">Link copied!</div>
-        </div>
+
+    
         
         
 
@@ -294,6 +299,25 @@
           }
         </script>
         
+        <script>
+          async function loadInvitedFriends(referrerId) {
+  const referrerFriends = [];
+  const querySnapshot = await db.collection('users').where("referredBy", "==", referrerId).get();
+
+  querySnapshot.forEach(doc => {
+    const friend = doc.data();
+    referrerFriends.push(friend);
+  });
+
+  return referrerFriends;
+}
+
+// Example usage:
+const referrerId = "ZinkUser123";
+const friendsList = await loadInvitedFriends(referrerId);
+console.log(friendsList);
+
+        </script>
         
           
         <script
