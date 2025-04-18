@@ -444,36 +444,43 @@
       
 
         <!-- REFERAL -->
-         <script>
-          // Import the necessary modules
+        <script>
           function copyLink() {
-    // Assuming you have a way to get the user ID, replace 'user123' with the actual user ID dynamically
-    const userId = 'user123';  // Replace with dynamic user ID
-    
-    // Construct the referral link using the user's unique ID
-    const referralLink = `https://t.me/Zinkapp_bot?ref=${userId}`;
-    
-    // Set the referral link into the hidden input field
-    document.getElementById("copyText").value = referralLink;
-
-    // Copy the referral link to the clipboard
-    navigator.clipboard.writeText(referralLink)
-        .then(() => {
-            // Show the "Referral link copied!" alert for 2 seconds
-            const alertBox = document.getElementById("alertBox");
-            alertBox.style.display = "block";
-            setTimeout(() => {
-                alertBox.style.display = "none";
-            }, 2000);
-        })
-        .catch((err) => {
-            console.error("Failed to copy: ", err);
-            alert("Copy failed. Try manually.");
-        });
-}
-
-         </script>
-
+            // Get the actual Telegram user object
+            if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe) {
+              const user = Telegram.WebApp.initDataUnsafe.user;
+        
+              if (!user || !user.id) {
+                alert("Telegram user not detected.");
+                return;
+              }
+        
+              const userId = user.id;
+              const referralLink = `https://t.me/Zinkapp_bot?ref=${userId}`;
+        
+              // Set referral link in the hidden input
+              document.getElementById("copyText").value = referralLink;
+        
+              // Copy to clipboard
+              navigator.clipboard.writeText(referralLink)
+                .then(() => {
+                  const alertBox = document.getElementById("alertBox");
+                  alertBox.style.display = "block";
+                  setTimeout(() => {
+                    alertBox.style.display = "none";
+                  }, 2000);
+                })
+                .catch((err) => {
+                  console.error("Failed to copy: ", err);
+                  alert("Copy failed. Try manually.");
+                });
+        
+            } else {
+              alert("Telegram WebApp not initialized.");
+            }
+          }
+        </script>
+        
 
 
       
