@@ -221,16 +221,13 @@
 
         <div class="text-center mx-auto my-4 p-4" style="color: white; max-width: 350px;">
           <!-- Hidden input holding the link -->
-          <input type="text" id="copyText" value="https://t.me/Zinkapp_bot?start=guest"
-                 style="position:absolute; left:-9999px;">
+          <input type="text" id="copyText" value="https://t.me/Zinkapp_bot" style="position:absolute; left:-9999px;">
         
-          <!-- Button -->
-          <button class="copy-btn" onclick="copyLink()">
-            Copy Link <i class="bi bi-clipboard"></i>
-          </button>
+          <!-- Copy Button -->
+          <button class="copy-btn" onclick="copyLink()">Copy Link <i class="bi bi-clipboard"></i></button>
         
-          <!-- Alert -->
-          <div id="alertBox" style="display: none; color: lime;">Link copied!</div>
+          <!-- Alert Message -->
+          <div id="alertBox" style="display: none; color: lime; margin-top: 10px;">Link copied!</div>
         </div>
         
         
@@ -270,25 +267,30 @@
 
         <script>
           function copyLink() {
-            const username = window.Telegram.WebApp?.initDataUnsafe?.user?.username || "guest";
-            const referralLink = `https://t.me/Zinkapp_bot?start=${username}`;
-        
             const copyInput = document.getElementById("copyText");
             const alertBox = document.getElementById("alertBox");
         
-            copyInput.value = referralLink;
+            // Select the input's content
+            copyInput.select();
+            copyInput.setSelectionRange(0, 99999); // For mobile
         
-            navigator.clipboard.writeText(referralLink)
-              .then(() => {
+            try {
+              const success = document.execCommand("copy"); // Older browser support
+              if (success) {
                 alertBox.style.display = "block";
                 setTimeout(() => {
                   alertBox.style.display = "none";
                 }, 2000);
-              })
-              .catch((err) => {
-                console.error("Copy failed: ", err);
+              } else {
                 alert("Copy failed. Try manually.");
-              });
+              }
+            } catch (err) {
+              console.error("Copy failed: ", err);
+              alert("Copy not supported on this browser.");
+            }
+        
+            // Optionally blur the input after copy
+            copyInput.blur();
           }
         </script>
         
