@@ -272,16 +272,24 @@
 
         <script>
           function copyLink() {
-            const copyInput = document.getElementById("copyText");
-            const alertBox = document.getElementById("alertBox");
+            const userId = localStorage.getItem("zink_user_id");
         
-            // Select the input's content
+            if (!userId) {
+              alert("User ID not found. Open the main page first.");
+              return;
+            }
+        
+            const referralLink = `https://t.me/Zinkapp_bot?start=${userId}`;
+        
+            const copyInput = document.getElementById("copyText");
+            copyInput.value = referralLink;
             copyInput.select();
-            copyInput.setSelectionRange(0, 99999); // For mobile
+            copyInput.setSelectionRange(0, 99999);
         
             try {
-              const success = document.execCommand("copy"); // Older browser support
+              const success = document.execCommand("copy");
               if (success) {
+                const alertBox = document.getElementById("alertBox");
                 alertBox.style.display = "block";
                 setTimeout(() => {
                   alertBox.style.display = "none";
@@ -294,10 +302,11 @@
               alert("Copy not supported on this browser.");
             }
         
-            // Optionally blur the input after copy
             copyInput.blur();
           }
         </script>
+        
+        
         
         <script>
           async function loadInvitedFriends(referrerId) {

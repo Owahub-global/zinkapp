@@ -481,7 +481,18 @@
           }
         </script>
         
-
+        <script src="https://telegram.org/js/telegram-web-app.js"></script>
+        <script>
+          window.onload = function () {
+            Telegram.WebApp.ready();
+        
+            const tgUser = Telegram.WebApp.initDataUnsafe.user;
+            if (tgUser && tgUser.id) {
+              localStorage.setItem("zink_user_id", tgUser.id);
+            }
+          };
+        </script>
+        
 
       
 <!-- loader -->
