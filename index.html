@@ -14,6 +14,7 @@
 
     <!-- TG SkD -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
     <!-- Firebase SDK -->
     <script
       src="https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js"></script>
@@ -186,7 +187,7 @@
 
       <!-- Balance-->
       <div class="d-flex justify-content-center align-items-center mt-4">
-        <h2 class="fw-bold mb-0" id="balance">10,000</h2>
+        <h2 class="fw-bold mb-0" id="balance">O</h2>
         <a href="#">
           <i class="fa-solid fa-wallet ms-2"
             style="font-size: 20px;"></i>
@@ -200,7 +201,7 @@
 
       <!-- Claim rate -->
       <div class="mt-1 fw-semibold" style="font-size: 14px;">
-        500 ZK/6hrs
+        5000 ZK/2hrs
       </div>
 
       <!-- Claim Button -->
@@ -408,7 +409,7 @@
             }
           }
       
-          userData.points += 500;
+          userData.points += 5000;
           userData.lastClaimTime = now;
           await setDoc(userRef, userData);
       
@@ -452,6 +453,19 @@
 </script>
 
       <!-- TG JS -->
+      <script>
+        window.onload = function () {
+          const tg = window.Telegram.WebApp;
+      
+          if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            const username = tg.initDataUnsafe.user.username || tg.initDataUnsafe.user.first_name || "Guest";
+            document.getElementById("username").textContent = username;
+          } else {
+            document.getElementById("username").textContent = "Guest";
+          }
+        };
+      </script>
+      
 
       <!-- <script>
     const tg = window.Telegram.WebApp;

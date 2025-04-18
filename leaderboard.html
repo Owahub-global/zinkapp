@@ -45,69 +45,65 @@
    
      <!-- Leaderboard item -->
       
-     <div class="leaderboard mx-auto my-4  w-100"
+     <div id="leaderboard" class="leaderboard mx-auto my-4 w-100"
      style="background-color: #0e0e0e; border-radius: 25px; max-width: 350px; color: white;">
 
-  <div class="d-flex align-items-center justify-content-between py-2 border-bottom border-secondary">
-    <div class="d-flex align-items-center gap-2">
-      <span>🥇</span>
-      <img src="zk logo.png" alt="Jude" style="width: 40px; height: 40px; border-radius: 50%;">
-      <strong>Jude</strong>
-    </div>
-    <div class="text-warning fw-bold">149,6737</div>
-  </div>
-
- 
-  <div class="d-flex align-items-center justify-content-between py-2 border-bottom border-secondary">
-    <div class="d-flex align-items-center gap-2">
-      <span>🥈</span>
-      <img src="zk logo.png" alt="Musk" style="width: 40px; height: 40px; border-radius: 50%;">
-      <strong>Musk</strong>
-    </div>
-    <div class="text-warning fw-bold">49,6737</div>
-  </div>
-
-
-  <div class="d-flex align-items-center justify-content-between py-2 border-bottom border-secondary">
-    <div class="d-flex align-items-center gap-2">
-      <span>🥉</span>
-      <img src="zk logo.png" alt="Tens" style="width: 40px; height: 40px; border-radius: 50%;">
-      <strong>Tens</strong>
-    </div>
-    <div class="text-warning fw-bold">59,6737</div>
-  </div>
-
-  
-  <div class="d-flex align-items-center justify-content-between py-2 border-bottom border-secondary">
-    <div class="d-flex align-items-center gap-2">
-      <span>04</span>
-      <img src="zk logo.png" alt="Boss" style="width: 40px; height: 40px; border-radius: 50%;">
-      <strong>Boss</strong>
-    </div>
-    <div class="text-warning fw-bold">49,6737</div>
-  </div>
-
- 
-  <div class="d-flex align-items-center justify-content-between py-2 border-bottom border-secondary">
-    <div class="d-flex align-items-center gap-2">
-      <span>05</span>
-      <img src="zk logo.png" alt="Trader" style="width: 40px; height: 40px; border-radius: 50%;">
-      <strong>Trader</strong>
-    </div>
-    <div class="text-warning fw-bold">39,6737</div>
-  </div>
-
-
-  <div class="d-flex align-items-center justify-content-between py-2">
-    <div class="d-flex align-items-center gap-2">
-      <span>06</span>
-      <img src="zk logo.png" alt="Zinks" style="width: 40px; height: 40px; border-radius: 50%;">
-      <strong>Zinks</strong>
-    </div>
-    <div class="text-warning fw-bold">29,6737</div>
-  </div>
 
 </div>
+
+       <!-- database -->
+       <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+      
+        const firebaseConfig = {
+          apiKey: "AIzaSyDfNRE2_ocllDhpPE-SFXq1vZQqdj1OtHw",
+          authDomain: "zink-app-dc8b9.firebaseapp.com",
+          projectId: "zink-app-dc8b9",
+          storageBucket: "zink-app-dc8b9.firebasestorage.app",
+          messagingSenderId: "204312979950",
+          appId: "1:204312979950:web:1788a23973ae35b01786ff",
+          measurementId: "G-YP7MYBDG7L"
+        };
+      
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+      
+        const leaderboardContainer = document.getElementById("leaderboard");
+      
+        const medals = ["🥇", "🥈", "🥉"];
+      
+        async function loadLeaderboard() {
+          const q = query(collection(db, "users"), orderBy("points", "desc"), limit(100));
+          const querySnapshot = await getDocs(q);
+          let rank = 0;
+      
+          querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            rank++;
+      
+            const medal = medals[rank - 1] || `#${rank}`;
+            const username = data.username || "Anonymous";
+            const points = data.points?.toLocaleString() || "0";
+      
+            const block = document.createElement("div");
+            block.className = "d-flex align-items-center justify-content-between py-2 border-bottom border-secondary";
+            block.innerHTML = `
+              <div class="d-flex align-items-center gap-2">
+                <span>${medal}</span>
+                <img src="zk logo.png" alt="${username}" style="width: 40px; height: 40px; border-radius: 50%;">
+                <strong>${username}</strong>
+              </div>
+              <div class="text-warning fw-bold">${points}</div>
+            `;
+            leaderboardContainer.appendChild(block);
+          });
+        }
+      
+        loadLeaderboard();
+      </script>
+      
+
 
         <script
             src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
