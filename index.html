@@ -183,9 +183,9 @@
      <i class="fa-solid fa-bars fs-4"></i>
    </button>
    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="menuDropdown">
-     <li><a class="dropdown-item" href="about.html">About Us</a></li>
-     <li><a class="dropdown-item" href="terms.html">Terms of Use</a></li>
-     <li><a class="dropdown-item" href="privacy.html">Privacy Policy</a></li>
+     <li><a class="dropdown-item" href="#">About Us</a></li>
+     <li><a class="dropdown-item" href="#">Terms of Use</a></li>
+     <li><a class="dropdown-item" href="#">Privacy Policy</a></li>
    </ul>
  </div>
 </div>
@@ -352,152 +352,116 @@
       <!-- claim btn and firebase -->
 
       <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
-  import { TonConnect } from "https://unpkg.com/@tonconnect/sdk@latest";
-
-  // Firebase config
-  const firebaseConfig = {
-    apiKey: "AIzaSyDfNRE2_ocllDhpPE-SFXq1vZQqdj1OtHw",
-    authDomain: "zink-app-dc8b9.firebaseapp.com",
-    projectId: "zink-app-dc8b9",
-    storageBucket: "zink-app-dc8b9.firebasestorage.app",
-    messagingSenderId: "204312979950",
-    appId: "1:204312979950:web:1788a23973ae35b01786ff",
-    measurementId: "G-YP7MYBDG7L"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  const tg = window.Telegram.WebApp;
-  tg.expand();
-
-  const user = tg.initDataUnsafe?.user;
-  const uid = user?.id?.toString();
-  const username = user?.username || "guest";
-
-  const claimBtn = document.getElementById('claimBtn');
-  const balanceText = document.getElementById('balance');
-  const zkLogo = document.getElementById('zkLogo');
-  const connectButton = document.getElementById("connectButton");
-
-  // TON wallet connection
-  const tonConnect = new TonConnect({
-    manifestUrl: "https://zinkapp.vercel.app/tonconnect-manifest.json"
-  });
-
-  if (connectButton) {
-    connectButton.addEventListener("click", async () => {
-      try {
-        await tonConnect.connect();
-        const wallet = tonConnect.account;
-
-        if (!wallet?.address) {
-          alert("Wallet address not found.");
-          return;
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+      
+        // Firebase config (from your project)
+        const firebaseConfig = {
+          apiKey: "AIzaSyDfNRE2_ocllDhpPE-SFXq1vZQqdj1OtHw",
+          authDomain: "zink-app-dc8b9.firebaseapp.com",
+          projectId: "zink-app-dc8b9",
+          storageBucket: "zink-app-dc8b9.firebasestorage.app",
+          messagingSenderId: "204312979950",
+          appId: "1:204312979950:web:1788a23973ae35b01786ff",
+          measurementId: "G-YP7MYBDG7L"
+        };
+      
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+      
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+      
+        const user = tg.initDataUnsafe?.user;
+        const uid = user?.id?.toString();
+        const username = user?.username || "guest";
+      
+        const claimBtn = document.getElementById('claimBtn');
+        const balanceText = document.getElementById('balance');
+        const zkLogo = document.getElementById('zkLogo');
+      
+        async function loadUserData() {
+          if (!uid) return;
+      
+          const userRef = doc(db, "users", uid);
+          const userSnap = await getDoc(userRef);
+          const now = Date.now();
+      
+          let userData = {
+            username: username,
+            points: 0,
+            lastClaimTime: 0
+          };
+      
+          if (userSnap.exists()) {
+            userData = userSnap.data();
+            const timePassed = (now - userData.lastClaimTime) / 1000;
+      
+            if (timePassed < 7200) {
+              disableClaimBtn(7200 - timePassed);
+            }
+          }
+      
+          balanceText.textContent = userData.points.toLocaleString();
         }
-
-        console.log("Wallet connected:", wallet.address);
-
-        const userDoc = doc(db, "users", uid);
-        await setDoc(userDoc, {
-          username: username,
-          walletAddress: wallet.address,
-          joinedAt: Date.now()
-        }, { merge: true });
-
-        alert("Wallet connected successfully!");
-      } catch (error) {
-        console.error("Wallet connection failed:", error);
-        alert("Failed to connect wallet. Please try again.");
-      }
-    });
-  }
-
-  async function loadUserData() {
-    if (!uid) return;
-
-    const userRef = doc(db, "users", uid);
-    const userSnap = await getDoc(userRef);
-    const now = Date.now();
-
-    let userData = {
-      username: username,
-      points: 0,
-      lastClaimTime: 0
-    };
-
-    if (userSnap.exists()) {
-      userData = userSnap.data();
-      const timePassed = (now - userData.lastClaimTime) / 1000;
-
-      if (timePassed < 7200) {
-        disableClaimBtn(7200 - timePassed);
-      }
-    }
-
-    balanceText.textContent = userData.points.toLocaleString();
-  }
-
-  async function handleClaimClick() {
-    if (!uid) {
-      alert("Telegram user not detected.");
-      return;
-    }
-
-    const userRef = doc(db, "users", uid);
-    const userSnap = await getDoc(userRef);
-    const now = Date.now();
-
-    let userData = {
-      username: username,
-      points: 0,
-      lastClaimTime: 0
-    };
-
-    if (userSnap.exists()) {
-      userData = userSnap.data();
-      const timePassed = (now - userData.lastClaimTime) / 1000;
-      if (timePassed < 7200) {
-        alert("Please wait before claiming again.");
-        return;
-      }
-    }
-
-    userData.points += 5000;
-    userData.lastClaimTime = now;
-    await setDoc(userRef, userData);
-
-    balanceText.textContent = userData.points.toLocaleString();
-    zkLogo.classList.add('glow-gold');
-    disableClaimBtn(7200);
-  }
-
-  function disableClaimBtn(duration) {
-    let time = Math.floor(duration);
-    claimBtn.disabled = true;
-
-    const timer = setInterval(() => {
-      time--;
-      const hours = Math.floor(time / 3600);
-      const minutes = Math.floor((time % 3600) / 60);
-      const seconds = time % 60;
-      claimBtn.textContent = `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
-      if (time <= 0) {
-        clearInterval(timer);
-        claimBtn.disabled = false;
-        claimBtn.textContent = 'Claim';
-        zkLogo.classList.remove('glow-gold');
-      }
-    }, 1000);
-  }
-
-  claimBtn.addEventListener('click', handleClaimClick);
-  loadUserData();
-</script>
-
+      
+        async function handleClaimClick() {
+          if (!uid) {
+            alert("Telegram user not detected.");
+            return;
+          }
+      
+          const userRef = doc(db, "users", uid);
+          const userSnap = await getDoc(userRef);
+          const now = Date.now();
+      
+          let userData = {
+            username: username,
+            points: 0,
+            lastClaimTime: 0
+          };
+      
+          if (userSnap.exists()) {
+            userData = userSnap.data();
+            const timePassed = (now - userData.lastClaimTime) / 1000;
+            if (timePassed < 7200) {
+              alert("Please wait before claiming again.");
+              return;
+            }
+          }
+      
+          userData.points += 5000;
+          userData.lastClaimTime = now;
+          await setDoc(userRef, userData);
+      
+          balanceText.textContent = userData.points.toLocaleString();
+          zkLogo.classList.add('glow-gold');
+          disableClaimBtn(7200);
+        }
+      
+        function disableClaimBtn(duration) {
+          let time = Math.floor(duration);
+          claimBtn.disabled = true;
+      
+          const timer = setInterval(() => {
+            time--;
+            const hours = Math.floor(time / 3600);
+            const minutes = Math.floor((time % 3600) / 60);
+            const seconds = time % 60;
+            claimBtn.textContent = `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      
+            if (time <= 0) {
+              clearInterval(timer);
+              claimBtn.disabled = false;
+              claimBtn.textContent = 'Claim';
+              zkLogo.classList.remove('glow-gold');
+            }
+          }, 1000);
+        }
+      
+        claimBtn.addEventListener('click', handleClaimClick);
+        loadUserData();
+      </script>
 
       <!-- REFERAL -->
       <script>
