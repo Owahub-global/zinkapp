@@ -186,12 +186,17 @@
         style="width: 80px; margin: 0 auto;">
 
       <!-- Balance-->
+
+      <!-- Connect Wallet Button -->
+      <div class="d-flex justify-content-center mt-3">
+        <button id="connectButton"
+          class="btn btn-outline-warning fw-bold px-4 py-2"
+          style="border-radius: 12px;">
+          <i class="fa-solid fa-wallet me-2"></i>Connect Wallet
+        </button>
+      </div>
       <div class="d-flex justify-content-center align-items-center mt-4">
         <h2 class="fw-bold mb-0" id="balance">0</h2>
-        <a href="#">
-          <i class="fa-solid fa-wallet ms-2"
-            style="font-size: 20px;"></i>
-        </a>
       </div>
 
       <!-- Rank -->
@@ -440,11 +445,44 @@
       
         claimBtn.addEventListener('click', handleClaimClick);
         loadUserData();
-      </script>
-      
 
-        <!-- REFERAL -->
-        <script>
+              // ton connect
+
+        import { TonConnect } from "https://unpkg.com/@tonconnect/sdk@latest";
+
+const tonConnect = new TonConnect();
+
+const connectButton = document.getElementById("connectButton");
+
+connectButton.addEventListener("click", async () => {
+  try {
+    await tonConnect.connect();
+    const wallet = tonConnect.account;
+    console.log("Wallet connected:", wallet.address);
+
+    // Save wallet address to Firebase
+    const user = window.Telegram.WebApp.initDataUnsafe.user;
+    const uid = user?.id?.toString();
+    const username = user?.username || "guest";
+
+    const userDoc = doc(db, "users", uid);
+    await setDoc(userDoc, {
+      username: username,
+      walletAddress: wallet.address,
+      joinedAt: serverTimestamp(),
+    }, { merge: true });
+
+    alert("Wallet connected successfully!");
+  } catch (error) {
+    console.error("Wallet connection failed:", error);
+    alert("Failed to connect wallet. Please try again.");
+  }
+});
+
+      </script>
+
+      <!-- REFERAL -->
+      <script>
           function copyLink() {
             // Get the actual Telegram user object
             if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe) {
@@ -480,22 +518,25 @@
             }
           }
         </script>
-        
-        <script src="https://telegram.org/js/telegram-web-app.js"></script>
-        <script>
+
+      <script src="https://telegram.org/js/telegram-web-app.js"></script>
+      <script>
           window.onload = function () {
             Telegram.WebApp.ready();
         
             const tgUser = Telegram.WebApp.initDataUnsafe.user;
             if (tgUser && tgUser.id) {
               localStorage.setItem("zink_user_id", tgUser.id);
+              console.log("Saved user ID:", tgUser.id); // for testing
+            } else {
+              console.log("User info not available.");
             }
           };
-        </script>
-        
 
-      
-<!-- loader -->
+
+        </script>
+
+      <!-- loader -->
       <script>
   window.addEventListener("load", function () {
   const loader = document.getElementById("loader");
@@ -517,7 +558,8 @@
           }
         };
       </script>
-      
+
+
 
       <!-- <script>
     const tg = window.Telegram.WebApp;
