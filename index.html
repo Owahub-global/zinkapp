@@ -613,7 +613,41 @@
   document.addEventListener('DOMContentLoaded', checkExistingConnection);
 </script>
 
+<script>
+  async function handleWalletConnection() {
+    const button = document.getElementById('connectButton');
+    
+    // Telegram Mini App flow
+    if (window.Telegram?.WebApp?.openWallet) {
+      button.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Opening Wallet`;
+      
+      try {
+        const result = await Telegram.WebApp.openWallet({
+          currency: 'TON',
+          onInvoiceClosed: (status) => {
+            if (status === 'paid') {
+              button.innerHTML = `<i class="fa-solid fa-check-circle me-2"></i>Connected`;
+              button.classList.replace('btn-outline-warning', 'btn-success');
+            }
+          }
+        });
+      } catch (e) {
+        console.error('Telegram wallet error:', e);
+        button.innerHTML = `<i class="fa-solid fa-wallet me-2"></i>Try Again`;
+      }
+    } 
+    // Browser fallback
+    else {
+      const connector = new TonConnect.TonConnect({
+        manifestUrl: 'https://yourdomain.com/tonconnect-manifest.json'
+      });
+      
+      // ... rest of the TON Connect code from previous example
+    }
+  }
 
+  document.getElementById('connectButton').addEventListener('click', handleWalletConnection);
+</script>
       <!-- loader -->
       <script>
   window.addEventListener("load", function () {
