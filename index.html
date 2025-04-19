@@ -523,138 +523,103 @@
 
 <!-- TON CONNECT -->
  
-        
-<!-- Paste this right before your closing </body> tag -->
+<!-- TON Wallet Connection - Paste before closing </body> -->
 <script src="https://cdn.jsdelivr.net/npm/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js"></script>
 <script>
-  // 1. Initialize TON Connector
-  const connector = new TonConnect.TonConnect({
-    manifestUrl: 'https://yourdomain.com/tonconnect-manifest.json'
+  // Initialize when page loads
+  document.addEventListener('DOMContentLoaded', async () => {
+    const connectButton = document.getElementById('connectButton');
+    
+    // 1. First check if we're in Telegram Mini App
+    if (window.Telegram?.WebApp?.platform !== 'unknown') {
+      // Telegram Mini App flow
+      connectButton.addEventListener('click', handleTelegramWallet);
+    } else {
+      // Browser fallback with TON Connect
+      await initTonConnect(connectButton);
+    }
   });
 
-  // 2. Handle Connect Button
-  document.getElementById('connectButton').addEventListener('click', async function() {
-    const button = this;
+  // Telegram Mini App Wallet Connection
+  async function handleTelegramWallet() {
+    const button = document.getElementById('connectButton');
     
     try {
-      // Show loading state
       button.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Connecting`;
       button.disabled = true;
       
-      // Get available wallets
-      const wallets = await connector.getWallets();
-      const preferredWallet = wallets.find(w => w.embedded) || wallets[0];
-      
-      if (!preferredWallet) {
-        throw new Error('No TON wallet found');
-      }
-
-      // Connect to wallet
-      await connector.connect({ jsBridgeKey: 'tonconnect' }, preferredWallet);
-      
-      // Listen for connection changes
-      connector.onStatusChange((wallet) => {
-        if (wallet) {
-          // Connected successfully
-          const shortAddress = `${wallet.address.slice(0, 4)}...${wallet.address.slice(-4)}`;
-          button.innerHTML = `<i class="fa-solid fa-check-circle me-2"></i>${shortAddress}`;
-          button.classList.replace('btn-outline-warning', 'btn-success');
-          
-          // Optional: Fetch balance
-          fetchTonBalance(wallet.address);
-        } else {
-          // Disconnected
-          resetConnectButton();
+      Telegram.WebApp.openWallet({
+        currency: 'TON',
+        onInvoiceClosed: (status) => {
+          if (status === 'paid') {
+            button.innerHTML = `<i class="fa-solid fa-check-circle me-2"></i>Connected`;
+            button.classList.replace('btn-outline-warning', 'btn-success');
+            // You can now access wallet via Telegram.WebApp.sendData()
+          } else {
+            resetConnectButton();
+          }
         }
       });
-      
     } catch (error) {
-      console.error('Connection error:', error);
-      button.innerHTML = `<i class="fa-solid fa-wallet me-2"></i>Try Again`;
-      setTimeout(() => resetConnectButton(), 2000);
-    } finally {
-      button.disabled = false;
-    }
-  });
-
-  // 3. Check existing connection on page load
-  async function checkExistingConnection() {
-    try {
-      const isConnected = await connector.restoreConnection();
-      if (isConnected && connector.account) {
-        const shortAddress = `${connector.account.address.slice(0, 4)}...${connector.account.address.slice(-4)}`;
-        document.getElementById('connectButton').innerHTML = `<i class="fa-solid fa-check-circle me-2"></i>${shortAddress}`;
-        document.getElementById('connectButton').classList.replace('btn-outline-warning', 'btn-success');
-      }
-    } catch (error) {
-      console.error('Connection check error:', error);
+      console.error('Telegram wallet error:', error);
+      resetConnectButton();
     }
   }
 
-  // 4. Reset button to initial state
+  // TON Connect for browsers
+  async function initTonConnect(connectButton) {
+    const connector = new TonConnect.TonConnect({
+      manifestUrl: 'https://zinkapp.vercel.app/tonconnect-manifest.json'
+    });
+
+    // Check existing connection
+    const isConnected = await connector.restoreConnection();
+    if (isConnected && connector.account) {
+      updateConnectButton(connector.account.address);
+    }
+
+    // Handle button click
+    connectButton.addEventListener('click', async () => {
+      try {
+        connectButton.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Connecting`;
+        connectButton.disabled = true;
+        
+        const wallets = await connector.getWallets();
+        const wallet = wallets.find(w => w.embedded) || wallets[0];
+        
+        if (!wallet) throw new Error('No TON wallet detected');
+        
+        await connector.connect({ jsBridgeKey: 'tonconnect' }, wallet);
+        
+        connector.onStatusChange((wallet) => {
+          if (wallet) {
+            updateConnectButton(wallet.address);
+          } else {
+            resetConnectButton();
+          }
+        });
+      } catch (error) {
+        console.error('TON Connect error:', error);
+        resetConnectButton();
+      }
+    });
+  }
+
+  // UI Helpers
+  function updateConnectButton(address) {
+    const button = document.getElementById('connectButton');
+    const shortAddress = `${address.slice(0, 4)}...${address.slice(-4)}`;
+    button.innerHTML = `<i class="fa-solid fa-check-circle me-2"></i>${shortAddress}`;
+    button.classList.replace('btn-outline-warning', 'btn-success');
+    button.disabled = false;
+  }
+
   function resetConnectButton() {
     const button = document.getElementById('connectButton');
     button.innerHTML = `<i class="fa-solid fa-wallet me-2"></i>Connect Wallet`;
     button.classList.replace('btn-success', 'btn-outline-warning');
+    button.disabled = false;
   }
-
-  // 5. Example balance fetch (implement your actual logic)
-  async function fetchTonBalance(address) {
-    try {
-      // Placeholder - replace with actual TON balance check
-      console.log('Fetching balance for:', address);
-      // document.getElementById('balance').textContent = '...loading...';
-    } catch (error) {
-      console.error('Balance fetch error:', error);
-    }
-  }
-
-  // Initialize on page load
-  document.addEventListener('DOMContentLoaded', checkExistingConnection);
-</script>
-
-<script>
-  async function handleWalletConnection() {
-    const button = document.getElementById('connectButton');
-    
-    // Telegram Mini App flow
-    if (window.Telegram?.WebApp?.openWallet) {
-      button.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Opening Wallet`;
-      
-      try {
-        const result = await Telegram.WebApp.openWallet({
-          currency: 'TON',
-          onInvoiceClosed: (status) => {
-            if (status === 'paid') {
-              button.innerHTML = `<i class="fa-solid fa-check-circle me-2"></i>Connected`;
-              button.classList.replace('btn-outline-warning', 'btn-success');
-            }
-          }
-        });
-      } catch (e) {
-        console.error('Telegram wallet error:', e);
-        button.innerHTML = `<i class="fa-solid fa-wallet me-2"></i>Try Again`;
-      }
-    } 
-    // Browser fallback
-    else {
-      const connector = new TonConnect.TonConnect({
-        manifestUrl: 'https://yourdomain.com/tonconnect-manifest.json'
-      });
-      
-      // ... rest of the TON Connect code from previous example
-    }
-  }
-
-  document.getElementById('connectButton').addEventListener('click', handleWalletConnection);
-</script>
-      <!-- loader -->
-      <script>
-  window.addEventListener("load", function () {
-  const loader = document.getElementById("loader");
-  loader.classList.add("hide");
-  setTimeout(() => loader.style.display = "none", 500);
-});
 </script>
 
       <!-- TG JS -->
