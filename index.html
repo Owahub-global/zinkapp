@@ -354,9 +354,8 @@
       <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
         import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
-        import { TonConnect } from "https://unpkg.com/@tonconnect/sdk@latest";
       
-        // Firebase Init
+        // Firebase config (from your project)
         const firebaseConfig = {
           apiKey: "AIzaSyDfNRE2_ocllDhpPE-SFXq1vZQqdj1OtHw",
           authDomain: "zink-app-dc8b9.firebaseapp.com",
@@ -370,7 +369,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
       
-        // Telegram Init
         const tg = window.Telegram.WebApp;
         tg.expand();
       
@@ -378,22 +376,16 @@
         const uid = user?.id?.toString();
         const username = user?.username || "guest";
       
-        // DOM Elements
-        const claimBtn = document.getElementById("claimBtn");
-        const connectBtn = document.getElementById("connectButton");
-        const balanceText = document.getElementById("balance");
-        const zkLogo = document.getElementById("zkLogo");
+        const claimBtn = document.getElementById('claimBtn');
+        const balanceText = document.getElementById('balance');
+        const zkLogo = document.getElementById('zkLogo');
       
-        // TonConnect Wallet
-        const tonConnect = new TonConnect({
-          manifestUrl: "https://zinkapp.vercel.app/tonconnect-manifest.json"
-        });
-      
-        // Load User Balance
-        async function loadUser() {
+        async function loadUserData() {
           if (!uid) return;
-          const ref = doc(db, "users", uid);
-          const snap = await getDoc(ref);
+      
+          const userRef = doc(db, "users", uid);
+          const userSnap = await getDoc(userRef);
+          const now = Date.now();
       
           let userData = {
             username: username,
@@ -401,95 +393,76 @@
             lastClaimTime: 0
           };
       
-          if (snap.exists()) {
-            userData = snap.data();
-            const elapsed = (Date.now() - userData.lastClaimTime) / 1000;
-            if (elapsed < 7200) {
-              disableClaim(7200 - elapsed);
+          if (userSnap.exists()) {
+            userData = userSnap.data();
+            const timePassed = (now - userData.lastClaimTime) / 1000;
+      
+            if (timePassed < 7200) {
+              disableClaimBtn(7200 - timePassed);
             }
           }
       
           balanceText.textContent = userData.points.toLocaleString();
         }
       
-        // Claim Button Logic
-        async function handleClaim() {
-          if (!uid) return alert("Telegram user not detected");
+        async function handleClaimClick() {
+          if (!uid) {
+            alert("Telegram user not detected.");
+            return;
+          }
       
-          const ref = doc(db, "users", uid);
-          const snap = await getDoc(ref);
+          const userRef = doc(db, "users", uid);
+          const userSnap = await getDoc(userRef);
           const now = Date.now();
       
           let userData = {
-            username,
+            username: username,
             points: 0,
             lastClaimTime: 0
           };
       
-          if (snap.exists()) {
-            userData = snap.data();
-            const elapsed = (now - userData.lastClaimTime) / 1000;
-            if (elapsed < 7200) {
-              return alert("Wait before claiming again");
+          if (userSnap.exists()) {
+            userData = userSnap.data();
+            const timePassed = (now - userData.lastClaimTime) / 1000;
+            if (timePassed < 7200) {
+              alert("Please wait before claiming again.");
+              return;
             }
           }
       
           userData.points += 5000;
           userData.lastClaimTime = now;
-          await setDoc(ref, userData);
+          await setDoc(userRef, userData);
       
           balanceText.textContent = userData.points.toLocaleString();
-          zkLogo.classList.add("glow-gold");
-          disableClaim(7200);
+          zkLogo.classList.add('glow-gold');
+          disableClaimBtn(7200);
         }
       
-        // Disable and show countdown
-        function disableClaim(seconds) {
-          let remaining = Math.floor(seconds);
+        function disableClaimBtn(duration) {
+          let time = Math.floor(duration);
           claimBtn.disabled = true;
       
           const timer = setInterval(() => {
-            const h = Math.floor(remaining / 3600);
-            const m = Math.floor((remaining % 3600) / 60);
-            const s = remaining % 60;
-            claimBtn.textContent = `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-            remaining--;
+            time--;
+            const hours = Math.floor(time / 3600);
+            const minutes = Math.floor((time % 3600) / 60);
+            const seconds = time % 60;
+            claimBtn.textContent = `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
       
-            if (remaining < 0) {
+            if (time <= 0) {
               clearInterval(timer);
               claimBtn.disabled = false;
-              claimBtn.textContent = "Claim";
-              zkLogo.classList.remove("glow-gold");
+              claimBtn.textContent = 'Claim';
+              zkLogo.classList.remove('glow-gold');
             }
           }, 1000);
         }
       
-        // Connect Wallet
-        connectBtn.addEventListener("click", async () => {
-          try {
-            await tonConnect.connect();
-            const wallet = tonConnect.account;
-            if (!wallet?.address) return alert("No wallet returned");
-      
-            const ref = doc(db, "users", uid);
-            await setDoc(ref, {
-              walletAddress: wallet.address,
-              connectedAt: Date.now(),
-              username
-            }, { merge: true });
-      
-            alert("Wallet connected: " + wallet.address);
-          } catch (err) {
-            console.error("Connection failed", err);
-            alert("Wallet connection failed.");
-          }
-        });
-      
-        claimBtn.addEventListener("click", handleClaim);
-      
-        loadUser();
+        claimBtn.addEventListener('click', handleClaimClick);
+        loadUserData();
       </script>
-      
+
       <!-- REFERAL -->
       <script>
           function copyLink() {
