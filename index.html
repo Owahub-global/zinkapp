@@ -20,6 +20,10 @@
       src="https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js"></script>
     <script
       src="https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js"></script>
+                    <!-- ton connect SKD -->
+      <script src="https://cdn.jsdelivr.net/npm/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/ton@14.4.0/dist/ton.umd.min.js"></script>
+
 
     <style>
     .footer-menu {
@@ -211,6 +215,7 @@
           <i class="fa-solid fa-wallet me-2"></i>Connect Wallet
         </button>
       </div>
+
       <div class="d-flex justify-content-center align-items-center mt-4">
         <h2 class="fw-bold mb-0" id="balance">0</h2>
       </div>
@@ -515,6 +520,99 @@
             }
           };
         </script>
+
+<!-- TON CONNECT -->
+ 
+        
+<!-- Paste this right before your closing </body> tag -->
+<script src="https://cdn.jsdelivr.net/npm/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js"></script>
+<script>
+  // 1. Initialize TON Connector
+  const connector = new TonConnect.TonConnect({
+    manifestUrl: 'https://yourdomain.com/tonconnect-manifest.json'
+  });
+
+  // 2. Handle Connect Button
+  document.getElementById('connectButton').addEventListener('click', async function() {
+    const button = this;
+    
+    try {
+      // Show loading state
+      button.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Connecting`;
+      button.disabled = true;
+      
+      // Get available wallets
+      const wallets = await connector.getWallets();
+      const preferredWallet = wallets.find(w => w.embedded) || wallets[0];
+      
+      if (!preferredWallet) {
+        throw new Error('No TON wallet found');
+      }
+
+      // Connect to wallet
+      await connector.connect({ jsBridgeKey: 'tonconnect' }, preferredWallet);
+      
+      // Listen for connection changes
+      connector.onStatusChange((wallet) => {
+        if (wallet) {
+          // Connected successfully
+          const shortAddress = `${wallet.address.slice(0, 4)}...${wallet.address.slice(-4)}`;
+          button.innerHTML = `<i class="fa-solid fa-check-circle me-2"></i>${shortAddress}`;
+          button.classList.replace('btn-outline-warning', 'btn-success');
+          
+          // Optional: Fetch balance
+          fetchTonBalance(wallet.address);
+        } else {
+          // Disconnected
+          resetConnectButton();
+        }
+      });
+      
+    } catch (error) {
+      console.error('Connection error:', error);
+      button.innerHTML = `<i class="fa-solid fa-wallet me-2"></i>Try Again`;
+      setTimeout(() => resetConnectButton(), 2000);
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  // 3. Check existing connection on page load
+  async function checkExistingConnection() {
+    try {
+      const isConnected = await connector.restoreConnection();
+      if (isConnected && connector.account) {
+        const shortAddress = `${connector.account.address.slice(0, 4)}...${connector.account.address.slice(-4)}`;
+        document.getElementById('connectButton').innerHTML = `<i class="fa-solid fa-check-circle me-2"></i>${shortAddress}`;
+        document.getElementById('connectButton').classList.replace('btn-outline-warning', 'btn-success');
+      }
+    } catch (error) {
+      console.error('Connection check error:', error);
+    }
+  }
+
+  // 4. Reset button to initial state
+  function resetConnectButton() {
+    const button = document.getElementById('connectButton');
+    button.innerHTML = `<i class="fa-solid fa-wallet me-2"></i>Connect Wallet`;
+    button.classList.replace('btn-success', 'btn-outline-warning');
+  }
+
+  // 5. Example balance fetch (implement your actual logic)
+  async function fetchTonBalance(address) {
+    try {
+      // Placeholder - replace with actual TON balance check
+      console.log('Fetching balance for:', address);
+      // document.getElementById('balance').textContent = '...loading...';
+    } catch (error) {
+      console.error('Balance fetch error:', error);
+    }
+  }
+
+  // Initialize on page load
+  document.addEventListener('DOMContentLoaded', checkExistingConnection);
+</script>
+
 
       <!-- loader -->
       <script>
