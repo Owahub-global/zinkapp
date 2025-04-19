@@ -445,40 +445,6 @@
       
         claimBtn.addEventListener('click', handleClaimClick);
         loadUserData();
-
-              // ton connect
-
-        import { TonConnect } from "https://unpkg.com/@tonconnect/sdk@latest";
-
-const tonConnect = new TonConnect();
-
-const connectButton = document.getElementById("connectButton");
-
-connectButton.addEventListener("click", async () => {
-  try {
-    await tonConnect.connect();
-    const wallet = tonConnect.account;
-    console.log("Wallet connected:", wallet.address);
-
-    // Save wallet address to Firebase
-    const user = window.Telegram.WebApp.initDataUnsafe.user;
-    const uid = user?.id?.toString();
-    const username = user?.username || "guest";
-
-    const userDoc = doc(db, "users", uid);
-    await setDoc(userDoc, {
-      username: username,
-      walletAddress: wallet.address,
-      joinedAt: serverTimestamp(),
-    }, { merge: true });
-
-    alert("Wallet connected successfully!");
-  } catch (error) {
-    console.error("Wallet connection failed:", error);
-    alert("Failed to connect wallet. Please try again.");
-  }
-});
-
       </script>
 
       <!-- REFERAL -->
@@ -532,8 +498,6 @@ connectButton.addEventListener("click", async () => {
               console.log("User info not available.");
             }
           };
-
-
         </script>
 
       <!-- loader -->
