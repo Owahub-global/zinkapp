@@ -162,18 +162,34 @@
     </div>
 
     <!-- header -->
-    <div class="d-flex align-items-center px-3 py-2 fixed-top shadow"
-      style="background-color: #111; z-index: 1030;">
-      <a href="#" class="d-inline-block flex-shrink-0">
-        <img src="zk logo.png" alt="Profile Image"
-          class="rounded-circle me-2"
-          style="width: 40px; height: 40px; object-fit: cover;">
-      </a>
-      <h5 class="mb-0 text-white fw-bold text-truncate" style="max-width: 80%;">
-        Hi <span id="username">Guest</span>
-      </h5>
+    <div class="d-flex align-items-center justify-content-between px-3 py-2 fixed-top shadow"
+    style="background-color: #111; z-index: 1030;">
+    
+ <!-- Logo & Greeting -->
+ <div class="d-flex align-items-center">
+   <a href="#" class="d-inline-block flex-shrink-0">
+     <img src="zk logo.png" alt="Profile Image"
+       class="rounded-circle me-2"
+       style="width: 40px; height: 40px; object-fit: cover;">
+   </a>
+   <h5 class="mb-0 text-white fw-bold text-truncate" style="max-width: 80%;">
+     Hi <span id="username">Guest</span>
+   </h5>
+ </div>
 
-    </div>
+ <!-- Dropdown Menu Button -->
+ <div class="dropdown">
+   <button class="btn text-white" type="button" id="menuDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+     <i class="fa-solid fa-bars fs-4"></i>
+   </button>
+   <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="menuDropdown">
+     <li><a class="dropdown-item" href="about.html">About Us</a></li>
+     <li><a class="dropdown-item" href="terms.html">Terms of Use</a></li>
+     <li><a class="dropdown-item" href="privacy.html">Privacy Policy</a></li>
+   </ul>
+ </div>
+</div>
+
 
     <div style="height: 70px;"></div>
 
