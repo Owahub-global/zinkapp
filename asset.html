@@ -38,7 +38,6 @@
       <p class="fw-bold mb-0">Balance</p>
     </div>
 
-  
     <div class="d-flex justify-content-center align-items-center mt-4">
       <h2 class="fw-bold mb-0" id="balanceDisplay">0</h2>
     </div>
@@ -51,47 +50,91 @@
     </div>
   </div>
 
-<!-- Load Telegram SDK FIRST -->
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <!-- Load Telegram SDK FIRST -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-<!-- Firebase & Load Balance -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+  <!-- Firebase & Load Balance -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDfNRE2_ocllDhpPE-SFXq1vZQqdj1OtHw",
-    authDomain: "zink-app-dc8b9.firebaseapp.com",
-    projectId: "zink-app-dc8b9",
-    storageBucket: "zink-app-dc8b9.appspot.com",
-    messagingSenderId: "204312979950",
-    appId: "1:204312979950:web:1788a23973ae35b01786ff",
-    measurementId: "G-YP7MYBDG7L"
-  };
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDfNRE2_ocllDhpPE-SFXq1vZQqdj1OtHw",
+      authDomain: "zink-app-dc8b9.firebaseapp.com",
+      projectId: "zink-app-dc8b9",
+      storageBucket: "zink-app-dc8b9.appspot.com",
+      messagingSenderId: "204312979950",
+      appId: "1:204312979950:web:1788a23973ae35b01786ff",
+      measurementId: "G-YP7MYBDG7L"
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-  window.addEventListener("DOMContentLoaded", async () => {
-    const tg = window.Telegram.WebApp;
-    tg.ready(); // Ensure Telegram is initialized
-    const userId = tg.initDataUnsafe?.user?.id?.toString();
-
-    if (!userId) {
-      console.error("Telegram User ID not available.");
-      return;
+    // Main function to load balance
+    async function loadBalance(userId) {
+      try {
+        console.log("Fetching balance for user:", userId);
+        const userDoc = await getDoc(doc(db, "users", userId));
+        
+        if (userDoc.exists()) {
+          const balance = userDoc.data().balance || 0;
+          document.getElementById("balanceDisplay").textContent = balance.toLocaleString();
+          console.log("Balance loaded:", balance);
+        } else {
+          console.log("User document doesn't exist, creating default...");
+          document.getElementById("balanceDisplay").textContent = "0";
+        }
+      } catch (err) {
+        console.error("Error loading balance:", err);
+        document.getElementById("balanceDisplay").textContent = "Error";
+      }
     }
 
-    try {
-      const userDoc = await getDoc(doc(db, "users", userId));
-      const balance = userDoc.exists() ? userDoc.data().balance || 0 : 0;
-      document.getElementById("balanceDisplay").textContent = balance.toLocaleString();
-    } catch (err) {
-      console.error("Error loading balance:", err);
-    }
-  });
-</script>
+    // When DOM is loaded
+    document.addEventListener("DOMContentLoaded", async () => {
+      const balanceDisplay = document.getElementById("balanceDisplay");
+      balanceDisplay.textContent = "Loading...";
+      
+      // Check if running in Telegram WebApp
+      if (window.Telegram?.WebApp) {
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand(); // Make web app full height
+        
+        console.log("Telegram WebApp initialized:", tg);
+        console.log("Init data:", tg.initData);
+        console.log("Init data (unsafe):", tg.initDataUnsafe);
 
+        // Try to get user ID from different sources
+        const userId = tg.initDataUnsafe?.user?.id || 
+                      tg.initData?.user?.id || 
+                      localStorage.getItem('test_user_id') || 
+                      "test_user_" + Math.floor(Math.random() * 10000);
+        
+        console.log("Using User ID:", userId);
+        
+        // Save test ID for refresh
+        if (!tg.initDataUnsafe?.user?.id) {
+          localStorage.setItem('test_user_id', userId);
+        }
+        
+        await loadBalance(userId.toString());
+      } else {
+        console.log("Not in Telegram environment - using test mode");
+        const testUserId = localStorage.getItem('test_user_id') || "test_user_" + Math.floor(Math.random() * 10000);
+        localStorage.setItem('test_user_id', testUserId);
+        await loadBalance(testUserId);
+      }
+    });
+
+    // Connect wallet button handler
+    document.getElementById("connectButton").addEventListener("click", () => {
+      alert("Wallet connection would happen here");
+    });
+  </script>
 
   <!-- Bootstrap -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
