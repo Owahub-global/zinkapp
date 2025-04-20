@@ -10,12 +10,21 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
+  
+  <!-- Add TonConnect SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js"></script>
+  
   <style>
     body {
       background-color: #111;
       min-height: 100vh;
       padding-bottom: 100px;
+    }
+    /* Added for wallet connection state */
+    .connected {
+      background-color: #28a745 !important;
+      border-color: #28a745 !important;
+      color: white !important;
     }
   </style>
 </head>
@@ -40,7 +49,7 @@
     </div>
 
     <div class="d-flex justify-content-center align-items-center mt-4">
-      <h2 class="fw-bold mb-0" id="balanceDisplay">Loading...</h2>
+      <h2 class="fw-bold mb-0" id="balanceDisplay">0</h2>
     </div>
 
     <!-- Connect Wallet Button -->
@@ -49,94 +58,103 @@
         <i class="fa-solid fa-wallet me-2"></i>Connect Wallet
       </button>
     </div>
+    
+    <!-- Hidden wallet info (will show after connection) -->
+    <div id="walletInfo" class="mt-4 text-start" style="display: none;">
+      <div class="d-flex justify-content-between">
+        <span>Wallet Address:</span>
+        <span id="walletAddress" class="text-warning"></span>
+      </div>
+      <div class="d-flex justify-content-between mt-2">
+        <span>TON Balance:</span>
+        <span id="tonBalance" class="text-warning">0</span>
+      </div>
+    </div>
   </div>
-
-  <!-- Load Telegram SDK -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-  <!-- Firebase & Load Balance -->
-  <script type="module">
-    // Use same version as index.html (v11)
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
-
-    // Firebase config (same as index.html)
-    const firebaseConfig = {
-      apiKey: "AIzaSyDfNRE2_ocllDhpPE-SFXq1vZQqdj1OtHw",
-      authDomain: "zink-app-dc8b9.firebaseapp.com",
-      projectId: "zink-app-dc8b9",
-      storageBucket: "zink-app-dc8b9.firebasestorage.app",
-      messagingSenderId: "204312979950",
-      appId: "1:204312979950:web:1788a23973ae35b01786ff",
-      measurementId: "G-YP7MYBDG7L"
-    };
-
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    async function loadBalance(userId) {
-      try {
-        console.log("Loading balance for user:", userId);
-        const userRef = doc(db, "users", userId);
-        const userDoc = await getDoc(userRef);
-
-        if (userDoc.exists()) {
-          const balance = userDoc.data().balance || 0;
-          document.getElementById("balanceDisplay").textContent = balance.toLocaleString();
-          console.log("Balance loaded successfully");
-        } else {
-          // Create user document if doesn't exist (like index.html does)
-          console.log("Creating new user document");
-          await setDoc(userRef, {
-            balance: 0,
-            points: 0,
-            lastClaimTime: 0,
-            username: Telegram.WebApp.initDataUnsafe?.user?.username || "unknown"
-          });
-          document.getElementById("balanceDisplay").textContent = "0";
-        }
-      } catch (error) {
-        console.error("Error loading balance:", error);
-        document.getElementById("balanceDisplay").textContent = "Error";
-      }
-    }
-
-    // Main initialization
-    document.addEventListener("DOMContentLoaded", () => {
-      const tg = window.Telegram?.WebApp;
-      
-      if (tg) {
-        tg.ready();
-        tg.expand();
-        
-        // Get user ID from either:
-        // 1. Telegram directly
-        // 2. localStorage (set by index.html)
-        const userId = tg.initDataUnsafe?.user?.id?.toString() || 
-                      localStorage.getItem("zink_user_id");
-        
-        if (userId) {
-          loadBalance(userId);
-        } else {
-          console.error("No user ID available");
-          document.getElementById("balanceDisplay").textContent = "Login required";
-        }
-      } else {
-        // Fallback for testing
-        const testUserId = localStorage.getItem("zink_user_id") || "test_user";
-        console.log("Not in Telegram - using test mode");
-        loadBalance(testUserId);
-      }
-    });
-
-    // Connect wallet button
-    document.getElementById("connectButton").addEventListener("click", () => {
-      alert("Wallet connection would be implemented here");
-    });
-  </script>
 
   <!-- Bootstrap -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Wallet Connection Script -->
+  <script>
+    // Initialize TonConnect
+    const connector = new TonConnect.TonConnect({
+      manifestUrl: 'https://zinkapp.vercel.app/tonconnect-manifest.json'
+    });
+    
+    // DOM Elements
+    const connectButton = document.getElementById('connectButton');
+    const balanceDisplay = document.getElementById('balanceDisplay');
+    const walletInfo = document.getElementById('walletInfo');
+    const walletAddress = document.getElementById('walletAddress');
+    const tonBalance = document.getElementById('tonBalance');
+    
+    // Connect Wallet Function
+    async function connectWallet() {
+      try {
+        // Get available wallets
+        const wallets = await connector.getWallets();
+        const connectionSource = { jsBridgeKey: 'tonconnect' };
+        
+        // This will show native wallet selector in Telegram
+        const connection = await connector.connect(connectionSource, wallets[0]);
+        
+        if (connection) {
+          updateWalletUI(connection.account.address);
+        }
+      } catch (error) {
+        console.error('Wallet connection error:', error);
+        alert('Failed to connect wallet');
+      }
+    }
+    
+    // Update UI after connection
+    async function updateWalletUI(address) {
+      try {
+        // Get balance from TON API
+        const balance = await getTonBalance(address);
+        
+        // Update UI elements
+        connectButton.innerHTML = `<i class="fa-solid fa-wallet me-2"></i>Connected`;
+        connectButton.classList.add('connected');
+        walletInfo.style.display = 'block';
+        walletAddress.textContent = `${address.slice(0, 4)}...${address.slice(-4)}`;
+        tonBalance.textContent = `${balance} TON`;
+        balanceDisplay.textContent = balance;
+        
+        // Store connection in localStorage
+        localStorage.setItem('ton_wallet', JSON.stringify({
+          address: address,
+          balance: balance
+        }));
+      } catch (error) {
+        console.error('UI update error:', error);
+      }
+    }
+    
+    // Get TON balance from API
+    async function getTonBalance(address) {
+      try {
+        const response = await fetch(`https://tonapi.io/v1/account/getInfo?account=${address}`);
+        const data = await response.json();
+        return (data.balance / 1000000000).toFixed(2); // Convert from nanoTON to TON
+      } catch (error) {
+        console.error('Balance fetch error:', error);
+        return 0;
+      }
+    }
+    
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Set up click handler
+      connectButton.addEventListener('click', connectWallet);
+      
+      // Check for existing connection
+      const connection = await connector.restoreConnection();
+      if (connection) {
+        updateWalletUI(connection.account.address);
+      }
+    });
+  </script>
 </body>
 </html>
