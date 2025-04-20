@@ -513,19 +513,23 @@
 
       
 
-      <!-- TG JS -->
-      <script>
-        window.onload = function () {
-          const tg = window.Telegram.WebApp;
-      
-          if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
-            const username = tg.initDataUnsafe.user.username || tg.initDataUnsafe.user.first_name || "Guest";
-            document.getElementById("username").textContent = username;
-          } else {
-            document.getElementById("username").textContent = "Guest";
-          }
-        };
-      </script>
+     <!-- TG JS -->
+<script>
+  window.onload = function () {
+    const tg = window.Telegram.WebApp;
+  
+    if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+      const username = tg.initDataUnsafe.user.username || tg.initDataUnsafe.user.first_name || "Guest";
+      const userId = tg.initDataUnsafe.user.id.toString();  // Get the userId
+      localStorage.setItem("zink_user_id", userId);  // Save it to localStorage
+
+      document.getElementById("username").textContent = username;
+    } else {
+      document.getElementById("username").textContent = "Guest";
+    }
+  };
+</script>
+
 
 
 
