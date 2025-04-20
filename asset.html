@@ -3,24 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Zink App</title>
+  <title>Zink App - Connect Wallet</title>
 
   <!-- Bootstrap and FontAwesome -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+  <!-- Telegram SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  
-  <!-- Add TonConnect SDK -->
+
+  <!-- TonConnect SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js"></script>
-  
+
   <style>
     body {
       background-color: #111;
+      color: white;
       min-height: 100vh;
       padding-bottom: 100px;
     }
-    /* Added for wallet connection state */
     .connected {
       background-color: #28a745 !important;
       border-color: #28a745 !important;
@@ -40,121 +42,84 @@
 
   <div style="height: 70px;"></div> <!-- Spacer -->
 
-  <!-- Card -->
+  <!-- Wallet Card -->
   <div class="card text-center mx-auto my-4 p-4 w-100"
        style="background-color: #0e0e0e; border-radius: 25px; max-width: 350px; color: white;">
 
-    <div class="d-flex justify-content-center align-items-center mt-4">
-      <p class="fw-bold mb-0">Balance</p>
-    </div>
-
-    <div class="d-flex justify-content-center align-items-center mt-4">
-      <h2 class="fw-bold mb-0" id="balanceDisplay">0</h2>
-    </div>
+    <p class="fw-bold mb-1">TON Balance</p>
+    <h2 class="fw-bold mb-3" id="balanceDisplay">0 TON</h2>
 
     <!-- Connect Wallet Button -->
-    <div class="d-flex justify-content-center mt-3">
-      <button id="connectButton" class="btn btn-outline-warning fw-bold px-4 py-2" style="border-radius: 12px;">
-        <i class="fa-solid fa-wallet me-2"></i>Connect Wallet
-      </button>
-    </div>
-    
-    <!-- Hidden wallet info (will show after connection) -->
+    <button id="connectButton" class="btn btn-outline-warning fw-bold px-4 py-2" style="border-radius: 12px;">
+      <i class="fa-solid fa-wallet me-2"></i>Connect Wallet
+    </button>
+
+    <!-- Wallet Info -->
     <div id="walletInfo" class="mt-4 text-start" style="display: none;">
       <div class="d-flex justify-content-between">
-        <span>Wallet Address:</span>
-        <span id="walletAddress" class="text-warning"></span>
-      </div>
-      <div class="d-flex justify-content-between mt-2">
-        <span>TON Balance:</span>
-        <span id="tonBalance" class="text-warning">0</span>
+        <span>Address:</span>
+        <span id="walletAddress" class="text-warning text-end"></span>
       </div>
     </div>
   </div>
 
-  <!-- Bootstrap -->
+  <!-- Bootstrap Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-  <!-- Wallet Connection Script -->
+  <!-- Wallet Connect Script -->
   <script>
-    // Initialize TonConnect
     const connector = new TonConnect.TonConnect({
       manifestUrl: 'https://zinkapp.vercel.app/tonconnect-manifest.json'
     });
-    
-    // DOM Elements
+
     const connectButton = document.getElementById('connectButton');
-    const balanceDisplay = document.getElementById('balanceDisplay');
-    const walletInfo = document.getElementById('walletInfo');
     const walletAddress = document.getElementById('walletAddress');
-    const tonBalance = document.getElementById('tonBalance');
-    
-    // Connect Wallet Function
+    const walletInfo = document.getElementById('walletInfo');
+    const balanceDisplay = document.getElementById('balanceDisplay');
+
+    // Connect Wallet
     async function connectWallet() {
       try {
-        // Get available wallets
-        const wallets = await connector.getWallets();
-        const connectionSource = { jsBridgeKey: 'tonconnect' };
-        
-        // This will show native wallet selector in Telegram
-        const connection = await connector.connect(connectionSource, wallets[0]);
-        
+        await connector.connect(); // Opens wallet selector
+        const connection = connector.account;
         if (connection) {
-          updateWalletUI(connection.account.address);
+          updateUI(connection.address);
         }
-      } catch (error) {
-        console.error('Wallet connection error:', error);
-        alert('Failed to connect wallet');
+      } catch (err) {
+        console.error('Connect error:', err);
+        alert("Failed to connect wallet");
       }
     }
-    
-    // Update UI after connection
-    async function updateWalletUI(address) {
+
+    // Update UI
+    async function updateUI(address) {
       try {
-        // Get balance from TON API
-        const balance = await getTonBalance(address);
-        
-        // Update UI elements
-        connectButton.innerHTML = `<i class="fa-solid fa-wallet me-2"></i>Connected`;
-        connectButton.classList.add('connected');
-        walletInfo.style.display = 'block';
-        walletAddress.textContent = `${address.slice(0, 4)}...${address.slice(-4)}`;
-        tonBalance.textContent = `${balance} TON`;
-        balanceDisplay.textContent = balance;
-        
-        // Store connection in localStorage
-        localStorage.setItem('ton_wallet', JSON.stringify({
-          address: address,
-          balance: balance
-        }));
-      } catch (error) {
-        console.error('UI update error:', error);
-      }
-    }
-    
-    // Get TON balance from API
-    async function getTonBalance(address) {
-      try {
+        // Get balance
         const response = await fetch(`https://tonapi.io/v1/account/getInfo?account=${address}`);
         const data = await response.json();
-        return (data.balance / 1000000000).toFixed(2); // Convert from nanoTON to TON
-      } catch (error) {
-        console.error('Balance fetch error:', error);
-        return 0;
+        const ton = (data.balance / 1e9).toFixed(2);
+
+        // Update page
+        walletAddress.textContent = `${address.slice(0, 4)}...${address.slice(-4)}`;
+        balanceDisplay.textContent = `${ton} TON`;
+        walletInfo.style.display = 'block';
+        connectButton.innerHTML = `<i class="fa-solid fa-wallet me-2"></i>Connected`;
+        connectButton.classList.add('connected');
+      } catch (err) {
+        console.error('Error updating UI:', err);
       }
     }
-    
-    // Initialize on page load
-    document.addEventListener('DOMContentLoaded', async () => {
-      // Set up click handler
-      connectButton.addEventListener('click', connectWallet);
-      
-      // Check for existing connection
-      const connection = await connector.restoreConnection();
-      if (connection) {
-        updateWalletUI(connection.account.address);
+
+    // Auto-restore connection on load
+    document.addEventListener("DOMContentLoaded", async () => {
+      connectButton.addEventListener("click", connectWallet);
+
+      const connectionRestored = await connector.restoreConnection();
+      if (connectionRestored && connector.account?.address) {
+        updateUI(connector.account.address);
       }
     });
   </script>
+
 </body>
 </html>
