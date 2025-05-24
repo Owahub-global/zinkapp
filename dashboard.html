@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZinkToken Presale</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- ethers.js v5 -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+
+  <!-- WalletConnect Provider -->
+  <script src="https://unpkg.com/@walletconnect/web3-provider@1.8.0/dist/umd/index.min.js"></script>
+
+  <!-- Web3Modal v1 -->
+  <script src="https://unpkg.com/web3modal@1.9.12/dist/index.js"></script>
+
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      max-width: 500px;
+      margin: auto;
+    }
+  </style>
+</head>
+<body class="bg-dark">
+  <div class="container py-5">
+    <!-- Header -->
+    <div class="text-center mb-5">
+      <h1 class="text-warning mb-3">ZinkToken Presale</h1>
+      <p class="lead text-white-50">Participate in the ZK token presale using BNB</p>
+    </div>
+
+    <div class="d-flex flex-column align-items-center gap-4">
+      <!-- Wallet Connect -->
+      <div class="card bg-dark bg-opacity-50 border border-secondary w-100">
+        <div class="card-body text-center p-4">
+          <button id="connectWallet" class="btn btn-warning btn-lg w-100 fw-bold">
+            Connect Wallet
+          </button>
+        </div>
+      </div>
+
+      <!-- User Info -->
+      <div class="card bg-dark bg-opacity-50 border border-secondary w-100">
+        <div class="card-body p-4">
+          <h5 class="text-warning mb-4">Your Contribution</h5>
+          <div class="d-flex justify-content-between mb-3">
+            <span class="text-white">Your Tokens Bal:</span>
+            <span id="userTokens" class="fw-bold">0</span>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="text-white">Your Contributed BNB:</span>
+            <span id="userBNB" class="fw-bold">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Buy Tokens -->
+      <div class="card bg-dark bg-opacity-50 border border-secondary w-100">
+        <div class="card-body p-4">
+          <h5 class="text-warning mb-4">Buy ZK Tokens</h5>
+          <ul class="list-group mb-4">
+            <li class="list-group-item bg-transparent text-white d-flex justify-content-between border-secondary">
+              <span>Rate per BNB:</span>
+              <span id="tokenRate" class="fw-bold">50,000 ZK</span>
+            </li>
+            <li class="list-group-item bg-transparent text-white d-flex justify-content-between border-secondary">
+              <span>Listing price:</span>
+              <span class="fw-bold text-success">$0.3</span>
+            </li>
+          </ul>
+
+          <label for="bnbAmount" class="form-label text-white">BNB Amount</label>
+          <div class="input-group mb-3">
+            <input type="number" id="bnbAmount" class="form-control form-control-lg bg-dark text-white border-secondary" placeholder="0.01" min="0.01" step="0.01" />
+            <span class="input-group-text bg-dark text-white border-secondary">BNB</span>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <span class="text-white">You will receive:</span>
+            <span id="previewZK" class="fs-4 fw-bold">0 ZK</span>
+          </div>
+
+          <button id="buyBtn" class="btn btn-success btn-lg w-100 fw-bold py-3">
+            Buy Now
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Your Web3 App Scripts (order matters) -->
+  <script src="web3js/abi.js"></script>
+  <script src="web3js/chains.js"></script>
+  <script src="web3js/wallet.js"></script>
+  <script src="web3js/app.js"></script>
+</body>
+</html>
