@@ -8,32 +8,45 @@ let tokenContract;
 
 // Load presale contract stats
 async function loadPresaleStats() {
-  if (!provider || !presaleAddress || !presaleAbi || !isChainSupported) {
-    console.warn("Presale not ready — missing provider or unsupported chain.");
-    return;
-  }
+  if (!provider || !isChainSupported) return;
 
   try {
-    presaleContract = new ethers.Contract(presaleAddress, presaleAbi, provider);
-    await presaleContract.getStats(); // Required to initialize
+    const network = await provider.getNetwork();
+    const chainId = Number(network.chainId);
+    const chain = chains[chainId];
+
+    if (!chain || !ethers.utils.isAddress(chain.presaleAddress)) {
+      showAlert("⚠ You're on the wrong network. Please switch.", "danger");
+      return;
+    }
+
+    presaleContract = new ethers.Contract(chain.presaleAddress, chain.abi, provider);
+    await presaleContract.getStats(); // confirm contract is working
   } catch (err) {
-    console.error("❌ loadPresaleStats failed:", err);
-    showAlert("❌ Failed to load presale stats. Wrong network or not deployed.", "danger");
+    console.warn("Skipping presale load — likely bad network or placeholder address.");
   }
 }
 
 // Load user balance and contribution
 async function loadUserInfo() {
-  if (!signer || !presaleContract || !tokenAddress || !tokenAbi || !isChainSupported) return;
+  if (!signer || !isChainSupported) return;
 
   try {
-    // Validate addresses
-    if (!ethers.utils.isAddress(tokenAddress) || !ethers.utils.isAddress(userAddress)) {
-      console.warn("Invalid token or user address.");
+    const network = await provider.getNetwork();
+    const chainId = Number(network.chainId);
+    const chain = chains[chainId];
+
+    if (
+      !chain ||
+      !ethers.utils.isAddress(chain.tokenAddress) ||
+      !ethers.utils.isAddress(chain.presaleAddress)
+    ) {
+      showAlert("⚠ You're on the wrong network. Please switch.", "danger");
       return;
     }
 
-    tokenContract = new ethers.Contract(tokenAddress, tokenAbi, provider);
+    tokenContract = new ethers.Contract(chain.tokenAddress, chain.tokenAbi, provider);
+    presaleContract = new ethers.Contract(chain.presaleAddress, chain.abi, provider);
 
     const balance = await tokenContract.balanceOf(userAddress);
     const contribution = await presaleContract.contributions(userAddress);
@@ -41,8 +54,7 @@ async function loadUserInfo() {
     safeSetText("userTokens", ethers.utils.formatUnits(balance, 18));
     safeSetText("userBNB", ethers.utils.formatEther(contribution));
   } catch (err) {
-    console.error("Failed to load user info:", err);
-    showAlert("❌ Failed to load your info. You may be on the wrong network.", "danger");
+    console.warn("Skipping user load — likely unsupported network.");
   }
 }
 
@@ -51,9 +63,16 @@ const bnbInput = document.getElementById("bnbAmount");
 if (bnbInput) {
   bnbInput.oninput = async function () {
     const amount = bnbInput.value;
-    if (!amount || isNaN(amount) || !presaleContract || !isChainSupported) return;
+    if (!amount || isNaN(amount) || !isChainSupported) return;
 
     try {
+      const network = await provider.getNetwork();
+      const chainId = Number(network.chainId);
+      const chain = chains[chainId];
+
+      if (!chain || !ethers.utils.isAddress(chain.presaleAddress)) return;
+
+      presaleContract = new ethers.Contract(chain.presaleAddress, chain.abi, provider);
       const tokens = await presaleContract.getTokenAmount(ethers.utils.parseEther(amount));
       safeSetText("previewZK", ethers.utils.formatUnits(tokens, 18));
     } catch (err) {
@@ -75,6 +94,21 @@ if (buyBtn) {
     try {
       const amountInEther = ethers.utils.parseEther(value);
       const balance = await provider.getBalance(userAddress);
+
+      const network = await provider.getNetwork();
+      const chainId = Number(network.chainId);
+      const chain = chains[chainId];
+
+      if (
+        !chain ||
+        !ethers.utils.isAddress(chain.presaleAddress) ||
+        !ethers.utils.isAddress(chain.tokenAddress)
+      ) {
+        showAlert("⚠ Please switch to a supported network", "danger");
+        return;
+      }
+
+      presaleContract = new ethers.Contract(chain.presaleAddress, chain.abi, provider);
       const stats = await presaleContract.getStats();
       const minCap = stats[6];
 
@@ -101,6 +135,13 @@ if (buyBtn) {
 
     } catch (err) {
       console.error("Transaction failed:", err);
+
+      // 🛑 Skip alert if user rejected the transaction
+      if (err.code === "ACTION_REJECTED") {
+        console.warn("User rejected the transaction.");
+        return;
+      }
+
       const reason = err?.data?.message || err?.message || "Transaction failed";
       showAlert(`❌ ${reason}`, "danger");
     }

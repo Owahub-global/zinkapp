@@ -39,10 +39,11 @@ function showAlert(message, type = "success") {
   if (existing) existing.remove();
 
   const alert = document.createElement("div");
-  alert.className = `alert alert-${type} position-fixed top-0 end-0 m-3 custom-alert`;
+  alert.className = `alert alert-${type} position-fixed top-0 start-50 translate-middle-x mt-4 px-4 custom-alert`;
   alert.style.zIndex = 9999;
   alert.setAttribute("role", "alert");
   alert.textContent = message;
+
   document.body.appendChild(alert);
 
   setTimeout(() => alert.remove(), 4000);
@@ -70,7 +71,7 @@ async function detectAndSetChain() {
       if (display) display.textContent = chainName;
     } else {
       isChainSupported = false;
-      showAlert("⚠ Please switch to a supported network (e.g., BNB Testnet)", "danger");
+      showAlert("⚠ Please switch to a supported network ", "danger");
       if (display) display.textContent = `Unsupported Chain (${chainId})`;
     }
   } catch (err) {
@@ -144,10 +145,13 @@ async function connectWallet() {
       } else {
         userAddress = accounts[0];
         updateWalletButton();
+        loadUserInfo().catch(console.error);
       }
     });
 
     instance.on("chainChanged", async () => {
+      provider = new ethers.providers.Web3Provider(instance);
+      signer = provider.getSigner();
       await detectAndSetChain();
       if (isChainSupported) {
         showAlert("✅ Network supported");
