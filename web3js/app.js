@@ -86,6 +86,7 @@ const buyBtn = document.getElementById("buyBtn");
 if (buyBtn) {
   buyBtn.onclick = async function () {
     const value = document.getElementById("bnbAmount").value;
+
     if (!signer || !value || isNaN(value) || !isChainSupported) {
       showAlert("⚠️ Enter a valid BNB amount", "warning");
       return;
@@ -97,21 +98,23 @@ if (buyBtn) {
 
       const network = await provider.getNetwork();
       const chainId = Number(network.chainId);
-      const chain = chains[chainId];
-
-      if (
-        !chain ||
-        !ethers.utils.isAddress(chain.presaleAddress) ||
-        !ethers.utils.isAddress(chain.tokenAddress)
-      ) {
-        showAlert("⚠ Please switch to a supported network", "danger");
+      const chainConfig = chains[chainId];
+      if (!chainConfig || !ethers.utils.isAddress(chainConfig.presaleAddress)) {
+        showAlert("⚠ You're on the wrong network. Please switch.", "danger");
         return;
       }
 
-      presaleContract = new ethers.Contract(chain.presaleAddress, chain.abi, provider);
-      const stats = await presaleContract.getStats();
-      const minCap = stats[6];
+      presaleContract = new ethers.Contract(chainConfig.presaleAddress, chainConfig.presaleAbi, provider);
 
+      let stats;
+      try {
+        stats = await presaleContract.getStats();
+      } catch {
+        showAlert("⚠ Could not fetch presale data. Wrong contract or network.", "danger");
+        return;
+      }
+
+      const minCap = stats[6]; // ensure it's a BigNumber
       if (amountInEther.lt(minCap)) {
         showAlert("❌ Enter at least the minimum contribution", "danger");
         return;
@@ -136,7 +139,6 @@ if (buyBtn) {
     } catch (err) {
       console.error("Transaction failed:", err);
 
-      // 🛑 Skip alert if user rejected the transaction
       if (err.code === "ACTION_REJECTED") {
         console.warn("User rejected the transaction.");
         return;
@@ -147,3 +149,4 @@ if (buyBtn) {
     }
   };
 }
+
