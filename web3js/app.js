@@ -11,17 +11,16 @@ async function loadPresaleStats() {
   if (!provider || !isChainSupported) return;
 
   try {
-    const network = await provider.getNetwork();
-    const chainId = Number(network.chainId);
-    const chain = chains[chainId];
+    const { chainId } = await provider.getNetwork();
+    const chain = chains[Number(chainId)];
 
     if (!chain || !ethers.utils.isAddress(chain.presaleAddress)) {
-      showAlert("⚠ You're on the wrong network. Please switch.", "danger");
+      console.warn("Unsupported chain or invalid presale address");
       return;
     }
 
-    presaleContract = new ethers.Contract(chain.presaleAddress, chain.abi, provider);
-    await presaleContract.getStats(); // confirm contract is working
+    presaleContract = new ethers.Contract(chain.presaleAddress, chain.presaleAbi, provider);
+    await presaleContract.getStats(); // Confirm contract responds
   } catch (err) {
     console.warn("Skipping presale load — likely bad network or placeholder address.");
   }
@@ -32,24 +31,24 @@ async function loadUserInfo() {
   if (!signer || !isChainSupported) return;
 
   try {
-    const network = await provider.getNetwork();
-    const chainId = Number(network.chainId);
-    const chain = chains[chainId];
+    const { chainId } = await provider.getNetwork();
+    const chain = chains[Number(chainId)];
 
     if (
       !chain ||
       !ethers.utils.isAddress(chain.tokenAddress) ||
       !ethers.utils.isAddress(chain.presaleAddress)
     ) {
-      showAlert("⚠ You're on the wrong network. Please switch.", "danger");
       return;
     }
 
     tokenContract = new ethers.Contract(chain.tokenAddress, chain.tokenAbi, provider);
-    presaleContract = new ethers.Contract(chain.presaleAddress, chain.abi, provider);
+    presaleContract = new ethers.Contract(chain.presaleAddress, chain.presaleAbi, provider);
 
-    const balance = await tokenContract.balanceOf(userAddress);
-    const contribution = await presaleContract.contributions(userAddress);
+    const [balance, contribution] = await Promise.all([
+      tokenContract.balanceOf(userAddress),
+      presaleContract.contributions(userAddress)
+    ]);
 
     safeSetText("userTokens", ethers.utils.formatUnits(balance, 18));
     safeSetText("userBNB", ethers.utils.formatEther(contribution));
@@ -66,13 +65,12 @@ if (bnbInput) {
     if (!amount || isNaN(amount) || !isChainSupported) return;
 
     try {
-      const network = await provider.getNetwork();
-      const chainId = Number(network.chainId);
-      const chain = chains[chainId];
+      const { chainId } = await provider.getNetwork();
+      const chain = chains[Number(chainId)];
 
       if (!chain || !ethers.utils.isAddress(chain.presaleAddress)) return;
 
-      presaleContract = new ethers.Contract(chain.presaleAddress, chain.abi, provider);
+      presaleContract = new ethers.Contract(chain.presaleAddress, chain.presaleAbi, provider);
       const tokens = await presaleContract.getTokenAmount(ethers.utils.parseEther(amount));
       safeSetText("previewZK", ethers.utils.formatUnits(tokens, 18));
     } catch (err) {
@@ -96,15 +94,15 @@ if (buyBtn) {
       const amountInEther = ethers.utils.parseEther(value);
       const balance = await provider.getBalance(userAddress);
 
-      const network = await provider.getNetwork();
-      const chainId = Number(network.chainId);
-      const chainConfig = chains[chainId];
-      if (!chainConfig || !ethers.utils.isAddress(chainConfig.presaleAddress)) {
+      const { chainId } = await provider.getNetwork();
+      const chain = chains[Number(chainId)];
+
+      if (!chain || !ethers.utils.isAddress(chain.presaleAddress)) {
         showAlert("⚠ You're on the wrong network. Please switch.", "danger");
         return;
       }
 
-      presaleContract = new ethers.Contract(chainConfig.presaleAddress, chainConfig.presaleAbi, provider);
+      presaleContract = new ethers.Contract(chain.presaleAddress, chain.presaleAbi, provider);
 
       let stats;
       try {
@@ -114,7 +112,7 @@ if (buyBtn) {
         return;
       }
 
-      const minCap = stats[6]; // ensure it's a BigNumber
+      const minCap = stats[6];
       if (amountInEther.lt(minCap)) {
         showAlert("❌ Enter at least the minimum contribution", "danger");
         return;
@@ -149,4 +147,3 @@ if (buyBtn) {
     }
   };
 }
-

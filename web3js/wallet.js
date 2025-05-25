@@ -1,12 +1,11 @@
-// wallet.js
 let provider;
 let signer;
 let userAddress;
 let refreshInterval;
-let isChainSupported = false; // used to block contract calls
+let isChainSupported = false;
 
 // ---- Web3Modal setup ----
-const projectId = "efa9752a2808a896f2ee15158466c98c"; // Your WalletConnect Cloud Project ID
+const projectId = "efa9752a2808a896f2ee15158466c98c";
 
 const SafeWalletConnectProvider = window.WalletConnectProvider?.default || window.WalletConnectProvider;
 
@@ -15,7 +14,7 @@ const providerOptions = {
     package: SafeWalletConnectProvider,
     options: {
       projectId,
-      rpc: rpcMap // this should be defined globally in chains.js
+      rpc: rpcMap
     }
   }
 };
@@ -45,7 +44,6 @@ function showAlert(message, type = "success") {
   alert.textContent = message;
 
   document.body.appendChild(alert);
-
   setTimeout(() => alert.remove(), 4000);
 }
 
@@ -63,15 +61,15 @@ async function detectAndSetChain() {
   try {
     const network = await provider.getNetwork();
     const chainId = Number(network.chainId);
-    const chainName = chains[chainId]?.name;
+    const chain = chains[chainId];
     const display = document.getElementById("currentChain");
 
-    if (chainName) {
+    if (chain && chain.presaleAddress && chain.presaleAbi) {
       isChainSupported = true;
-      if (display) display.textContent = chainName;
+      if (display) display.textContent = chain.name;
     } else {
       isChainSupported = false;
-      showAlert("⚠ Please switch to a supported network ", "danger");
+      showAlert("⚠ Please switch to a supported network", "danger");
       if (display) display.textContent = `Unsupported Chain (${chainId})`;
     }
   } catch (err) {
@@ -153,11 +151,12 @@ async function connectWallet() {
       provider = new ethers.providers.Web3Provider(instance);
       signer = provider.getSigner();
       await detectAndSetChain();
+
       if (isChainSupported) {
         showAlert("✅ Network supported");
         startAutoRefresh();
-        loadPresaleStats().catch(console.error);
-        loadUserInfo().catch(console.error);
+        await loadPresaleStats();
+        await loadUserInfo();
       } else {
         showAlert("⚠ Please switch to a supported network", "danger");
       }
