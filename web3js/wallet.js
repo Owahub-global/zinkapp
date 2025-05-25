@@ -130,7 +130,7 @@ async function connectWallet() {
       loadUserInfo()
     ]);
 
-    instance.on("accountsChanged", (accounts) => {
+    instance.on("accountsChanged", async (accounts) => {
       if (accounts.length === 0) {
         userAddress = null;
         const btn = document.getElementById("connectWallet");
@@ -143,22 +143,35 @@ async function connectWallet() {
       } else {
         userAddress = accounts[0];
         updateWalletButton();
-        loadUserInfo().catch(console.error);
+        await loadUserInfo().catch(console.error);
       }
     });
 
     instance.on("chainChanged", async () => {
+      // Recreate provider & signer on network change
       provider = new ethers.providers.Web3Provider(instance);
       signer = provider.getSigner();
+
       await detectAndSetChain();
 
       if (isChainSupported) {
+        const accounts = await provider.listAccounts();
+        if (accounts.length > 0) {
+          userAddress = accounts[0];
+          updateWalletButton();
+        }
+
         showAlert("✅ Network supported");
         startAutoRefresh();
-        await loadPresaleStats();
-        await loadUserInfo();
+
+        await Promise.all([
+          loadPresaleStats(),
+          loadUserInfo()
+        ]);
       } else {
         showAlert("⚠ Please switch to a supported network", "danger");
+        safeSetText("userTokens", "0");
+        safeSetText("userBNB", "0");
       }
     });
 
