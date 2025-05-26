@@ -130,15 +130,23 @@ if (buyBtn) {
 
       presaleContract = new ethers.Contract(chain.presaleAddress, chain.presaleAbi, provider);
 
-      let stats;
-      try {
-        stats = await presaleContract.getStats();
-      } catch {
-        showAlert("⚠ Could not fetch presale data. Wrong contract or network.", "danger");
+      // ✅ CHECK IF PRESALE IS PAUSED
+      const isPaused = await presaleContract.paused();
+      if (isPaused) {
+        showAlert("❌ Presale is currently paused. Buying is not available.", "danger");
         return;
       }
 
+      const stats = await presaleContract.getStats();
       const minCap = stats[6];
+      const tokensRemaining = await presaleContract.remainingTokens();
+      const tokensToReceive = await presaleContract.getTokenAmount(amountInEther);
+
+      if (tokensToReceive > tokensRemaining) {
+        showAlert("❌ Not enough tokens left in the presale pool", "danger");
+        return;
+      }
+
       if (amountInEther.lt(minCap)) {
         showAlert("❌ Enter at least the minimum contribution", "danger");
         return;
@@ -163,8 +171,9 @@ if (buyBtn) {
     } catch (err) {
       console.error("Transaction failed:", err);
 
-      if (err.code === "ACTION_REJECTED") {
-        console.warn("User rejected the transaction.");
+      if (err.code === "ACTION_REJECTED") return;
+      if (err.code === "UNPREDICTABLE_GAS_LIMIT") {
+        showAlert("❌ Transaction cannot proceed. Likely paused or invalid input.", "danger");
         return;
       }
 
