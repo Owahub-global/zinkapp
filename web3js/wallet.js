@@ -167,6 +167,7 @@ async function connectWallet() {
         await Promise.all([
           loadPresaleStats(),
           loadUserInfo()
+          
         ]);
       } else {
         showAlert("⚠ Please switch to a supported network", "danger");

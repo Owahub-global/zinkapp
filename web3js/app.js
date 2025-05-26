@@ -5,6 +5,7 @@ function safeSetText(id, text) {
 
 let presaleContract;
 let tokenContract;
+let countdownInterval;
 
 // Load presale contract stats
 async function loadPresaleStats() {
@@ -20,10 +21,35 @@ async function loadPresaleStats() {
     }
 
     presaleContract = new ethers.Contract(chain.presaleAddress, chain.presaleAbi, provider);
-    await presaleContract.getStats(); // Confirm contract responds
+    const stats = await presaleContract.getStats(); // Confirm contract responds
+
+    // Countdown: call the timer starter
+    const endTime = Number(stats[5].toString());
+    startCountdown(endTime);
+
   } catch (err) {
     console.warn("Skipping presale load — likely bad network or placeholder address.");
   }
+}
+
+// Start countdown timer
+function startCountdown(endTime) {
+  clearInterval(countdownInterval);
+  countdownInterval = setInterval(() => {
+    const now = Math.floor(Date.now() / 1000);
+    const timeLeft = Math.max(endTime - now, 0);
+    safeSetText("timeLeft", formatTime(timeLeft));
+    if (timeLeft === 0) clearInterval(countdownInterval);
+  }, 1000);
+}
+
+// Format time
+function formatTime(seconds) {
+  const d = Math.floor(seconds / (3600 * 24));
+  const h = Math.floor((seconds % (3600 * 24)) / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  return `${d}d ${h}h ${m}m ${s}s`;
 }
 
 // Load user balance and contribution
