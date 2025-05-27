@@ -142,10 +142,11 @@ if (buyBtn) {
       const tokensRemaining = await presaleContract.remainingTokens();
       const tokensToReceive = await presaleContract.getTokenAmount(amountInEther);
 
-      if (tokensToReceive > tokensRemaining) {
-        showAlert("❌ Not enough tokens left in the presale pool", "danger");
-        return;
-      }
+      if (tokensToReceive.gt(tokensRemaining)) {
+  showAlert("❌ Not enough tokens left in the presale pool", "danger");
+  return;
+}
+
 
       if (amountInEther.lt(minCap)) {
         showAlert("❌ Enter at least the minimum contribution", "danger");
