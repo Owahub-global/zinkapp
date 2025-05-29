@@ -1,8 +1,8 @@
 // abi.js
 
 // Your deployed addresses
-const presaleAddress = "0x0B633B2D4eb5B41b1BFf20c842AB8C1e3630FE56";
-const tokenAddress = "0xb09f8C7B524C9bCaa59582DC01982213D6a7c046";
+const presaleAddress = "0x3B4f322A9e7d9a3fa035825BBA13177C60b7F1E0";
+const tokenAddress = "0x299f4361Be1cC70A6DbF3daDF711Fbc5272CD59D";
 
 
 // Replace the ... with your full ABI arrays
