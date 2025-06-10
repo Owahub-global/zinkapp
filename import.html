@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Import Wallet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <!-- Bootstrap 5 CSS & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+  <style>
+    body {
+      background-color: #000;
+      color: #fff;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: start;
+      min-height: 100vh;
+    }
+    .container-box {
+      width: 100%;
+      max-width: 420px;
+      padding: 20px 16px;
+    }
+    .btn-paste {
+      font-size: 0.9rem;
+      padding: 4px 12px;
+    }
+    #confirmBtn {
+      height: 48px;
+      font-weight: 600;
+    }
+    textarea:focus {
+      box-shadow: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container-box">
+    <!-- Top Bar -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <a href="home.html"><i class="bi bi-arrow-left text-white fs-5"></i></a>
+      <i class="bi bi-qr-code-scan text-white fs-5"></i>
+    </div>
+
+    <!-- Title -->
+    <h5 class="fw-bold mb-1">Enter seed phrase or private key</h5>
+    <p class="text-secondary mb-4" style="font-size: 0.9rem;">
+      If you're using a seed phrase to import the wallet, separate each word with a space.
+    </p>
+
+    <!-- Textarea Input -->
+    <div class="mb-3">
+      <textarea id="walletInput" class="form-control bg-black text-white border border-secondary rounded-3" rows="4" placeholder=""></textarea>
+    </div>
+
+    <!-- Paste Button -->
+    <div class="mb-4">
+      <button class="btn btn-outline-light btn-sm rounded-pill btn-paste" onclick="pasteFromClipboard()">
+        <i class="bi bi-clipboard me-1"></i> Paste
+      </button>
+    </div>
+
+    <!-- Confirm Button -->
+    <button id="confirmBtn" class="btn w-100 rounded-pill text-white" style="background-color: #222;" disabled>
+      Confirm
+    </button>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Ethers.js -->
+  <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
+
+  <!-- Logic -->
+  <script>
+    const walletInput = document.getElementById('walletInput');
+    const confirmBtn = document.getElementById('confirmBtn');
+
+    function updateConfirmButton() {
+      const value = walletInput.value.trim();
+      if (value.length > 0) {
+        confirmBtn.removeAttribute('disabled');
+        confirmBtn.style.backgroundColor = '#00cc00';
+      } else {
+        confirmBtn.setAttribute('disabled', true);
+        confirmBtn.style.backgroundColor = '#222';
+      }
+    }
+
+    walletInput.addEventListener('input', updateConfirmButton);
+
+    async function pasteFromClipboard() {
+      try {
+        const text = await navigator.clipboard.readText();
+        walletInput.value = text;
+        updateConfirmButton();
+      } catch {
+        alert('Clipboard access denied.');
+      }
+    }
+
+    function saveWallet(wallet, mnemonic) {
+      localStorage.setItem("walletAddress", wallet.address);
+      localStorage.setItem("privateKey", wallet.privateKey);
+      if (mnemonic) {
+        localStorage.setItem("mnemonic", mnemonic);
+      }
+    }
+
+    confirmBtn.addEventListener("click", () => {
+      const input = walletInput.value.trim();
+      try {
+        let wallet, mnemonic = null;
+
+        if (input.split(" ").length >= 12) {
+          wallet = ethers.Wallet.fromMnemonic(input);
+          mnemonic = input;
+        } else {
+          wallet = new ethers.Wallet(input);
+        }
+
+        saveWallet(wallet, mnemonic);
+        alert("✅ Wallet imported successfully!");
+        window.location.href = "index.html"; // Go to dashboard
+
+      } catch (err) {
+        alert("❌ Invalid seed phrase or private key.");
+      }
+    });
+  </script>
+
+</body>
+</html>

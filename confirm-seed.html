@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Confirm Seed Phrase</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Bootstrap 5 CSS & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+  <style>
+    body {
+      background-color: #000;
+      color: #fff;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: start;
+      min-height: 100vh;
+    }
+    .container-box {
+      width: 100%;
+      max-width: 420px;
+      padding: 20px 16px;
+    }
+    .btn-paste {
+      font-size: 0.9rem;
+      padding: 4px 12px;
+    }
+    #confirmBtn {
+      height: 48px;
+      font-weight: 600;
+    }
+    textarea:focus {
+      box-shadow: none !important;
+    }
+    .error-msg {
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container-box">
+    <!-- Top Bar -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <a href="save.html"><i class="bi bi-arrow-left text-white fs-5"></i></a>
+      <i class="bi bi-lock text-white fs-5"></i>
+    </div>
+
+    <!-- Title -->
+    <h5 class="fw-bold mb-1">Confirm your seed phrase</h5>
+    <p class="text-secondary mb-4" style="font-size: 0.9rem;">
+      Please re-type the seed phrase you saved. This helps confirm you wrote it down correctly.
+    </p>
+
+    <!-- Textarea Input -->
+    <div class="mb-3">
+      <textarea id="confirmInput" class="form-control bg-black text-white border border-secondary rounded-3" rows="4" placeholder=""></textarea>
+    </div>
+
+    <!-- Paste Button -->
+    <div class="mb-3">
+      <button class="btn btn-outline-light btn-sm rounded-pill btn-paste" onclick="pasteFromClipboard()">
+        <i class="bi bi-clipboard me-1"></i> Paste
+      </button>
+    </div>
+
+    <!-- Error Message -->
+    <div id="errorMsg" class="text-danger mb-3 d-none error-msg">❌ Seed phrase does not match.</div>
+
+    <!-- Confirm Button -->
+    <button id="confirmBtn" class="btn w-100 rounded-pill text-white" style="background-color: #222;" disabled>
+      Confirm
+    </button>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Logic -->
+  <script>
+    const confirmInput = document.getElementById('confirmInput');
+    const confirmBtn = document.getElementById('confirmBtn');
+    const errorMsg = document.getElementById('errorMsg');
+
+    function updateConfirmButton() {
+      const value = confirmInput.value.trim();
+      if (value.length > 0) {
+        confirmBtn.removeAttribute('disabled');
+        confirmBtn.style.backgroundColor = '#00cc00';
+      } else {
+        confirmBtn.setAttribute('disabled', true);
+        confirmBtn.style.backgroundColor = '#222';
+      }
+      errorMsg.classList.add("d-none");
+    }
+
+    confirmInput.addEventListener('input', updateConfirmButton);
+
+    async function pasteFromClipboard() {
+      try {
+        const text = await navigator.clipboard.readText();
+        confirmInput.value = text;
+        updateConfirmButton();
+      } catch {
+        alert('Clipboard access denied.');
+      }
+    }
+
+    confirmBtn.addEventListener("click", () => {
+      const entered = confirmInput.value.trim().toLowerCase().replace(/\s+/g, " ");
+      const stored = (localStorage.getItem("mnemonic") || "").trim().toLowerCase().replace(/\s+/g, " ");
+
+      if (entered === stored && entered.split(" ").length >= 12) {
+        window.location.href = "index.html"; // Go to dashboard
+      } else {
+        errorMsg.classList.remove("d-none");
+      }
+    });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Alien Wallet</title>
+    
+
+
+    <!-- Bootstrap 5 CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background-color: #121212;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .wallet-card {
+        max-width: 400px;
+        border-radius: 16px;
+        border: 1px solid #2d2d2d;
+        background-color: #1e1e1e;
+      }
+      .wallet-item {
+        border: 1px solid #2d2d2d;
+        background-color: #252525;
+      }
+      .wallet-item:hover {
+        background-color: #2e2e2e;
+        border-color: #3d3d3d;
+      }
+      .input-area::before {
+        content: attr(data-placeholder);
+        color: #6c757d;
+        position: absolute;
+        pointer-events: none;
+      }
+      .input-area:empty:before {
+        display: block;
+      }
+      .input-area:focus:before {
+        display: none;
+      }
+      .input-area {
+        min-height: 100px;
+        background-color: #2a2a2a;
+        position: relative;
+      }
+      .logo-area {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      .logo-area img {
+        width: 80px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Wallet Options Card -->
+      <div id="wallet-options" class="card mx-auto wallet-card shadow">
+        <div class="card-body p-4">
+          <div class="logo-area">
+            <img src="alien head.png" alt="Alien Wallet Logo" />
+          </div>
+          <h4 class="card-title text-center mb-4 text-light">
+            Welcome to Alien Wallet
+          </h4>
+          <p class="text-center text-muted small mb-4">
+            Secure. Decentralized. Alien-powered wallet to manage your crypto
+            and Web3 identity.
+          </p>
+
+          <!-- Create Wallet -->
+          <div
+            id="create-wallet-btn"
+            class="d-flex align-items-center p-3 mb-3 wallet-item rounded-3"
+            style="cursor: pointer"
+          >
+            <div class="me-3 fs-4">🛠️</div>
+            <div class="flex-grow-1">
+              <h6 class="mb-1 text-light">Create Wallet</h6>
+              <p class="text-muted small mb-0">
+                Generate a brand-new wallet with seed phrase
+              </p>
+            </div>
+            <div>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                fill="#6c757d"
+                viewBox="0 0 16 16"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"
+                />
+              </svg>
+            </div>
+            <div id="create-wallet-result" class="text-start mt-4 small"></div>
+
+          </div>
+
+          <!-- Import Wallet -->
+          <div
+            id="import-wallet-btn"
+            class="d-flex align-items-center p-3 wallet-item rounded-3"
+            style="cursor: pointer"
+          >
+            <div class="me-3 fs-4">🔄</div>
+            <div class="flex-grow-1">
+              <h6 class="mb-1 text-light">Import Wallet</h6>
+              <p class="text-muted small mb-0">
+                Use your seed phrase or private key
+              </p>
+            </div>
+            <div>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                fill="#6c757d"
+                viewBox="0 0 16 16"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create Wallet Modal -->
+    <div
+      class="modal fade"
+      id="createWalletModal"
+      tabindex="-1"
+      aria-labelledby="createWalletModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white rounded-4">
+          <div class="modal-header border-0">
+            <h5 class="modal-title" id="createWalletModalLabel">
+              Create New Wallet
+            </h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body text-center">
+            <p class="text-muted">Choose your preferred seed phrase length:</p>
+            <button
+              class="btn btn-outline-light w-100 mb-3"
+              onclick="createWalletUI(12)"
+            >
+              🔐 12 Word Seed Phrase
+            </button>
+            <button
+              class="btn btn-outline-light w-100"
+              onclick="createWalletUI(24)"
+            >
+              🔐 24 Word Seed Phrase
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Import Wallet Modal -->
+    <div
+      class="modal fade"
+      id="importWalletModal"
+      tabindex="-1"
+      aria-labelledby="importWalletModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white rounded-4">
+          <div class="modal-header border-0">
+            <h5 class="modal-title" id="importWalletModalLabel">
+              Import Wallet
+            </h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <p class="text-muted small text-center">
+              Enter your seed phrase or private key
+            </p>
+            <div
+              class="p-3 mb-4 input-area rounded-3 text-start"
+              contenteditable="true"
+              data-placeholder="Paste your seed phrase or private key here..."
+              style="outline: none; color: #e0e0e0"
+            ></div>
+            <button class="btn btn-primary w-100 py-2 rounded-3 fw-bold">
+              Confirm
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Script -->
+<!-- Ethers.js (MUST come first) -->
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+
+
+<!-- Then your app logic -->
+<script src="js/app.js"></script>
+
+    <script src="js/app.js"></script>
+
+  </body>
+</html>
